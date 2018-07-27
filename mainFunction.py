@@ -433,10 +433,10 @@ def mainFunctionPy_upto2(pathGlobal,alpha1,alpha2,pc):
 
 	for k in probability_1.keys():
 		for call in probability_1[k].keys():
-			if (pc ==0 and sum(Count[k][0].values()) == 0):
+			if (float(pc) ==0 and sum(Count[k][0].values()) == 0):
 				prob = 0
 			else:
-				prob = (float(Count[k][0][call])+pc)/(sum(Count[k][0].values())+pc*len(alpha1))
+				prob = (float(Count[k][0][call])+float(pc))/(sum(Count[k][0].values())+float(pc)*len(alpha1))
 
 			probability_1[k][call] =  prob
 			F1[k][call] = prob
@@ -452,10 +452,10 @@ def mainFunctionPy_upto2(pathGlobal,alpha1,alpha2,pc):
 			for element in alpha1:
 				allwithFirst.append(str(getfirst+"\t"+element))
 			subset = dict((r, Count[k][1][r]) for r in allwithFirst if r in Count[k][1])
-			if (pc ==0 and sum(subset.values()) == 0):
+			if (float(pc) ==0 and sum(subset.values()) == 0):
 				prob = 0
 			else:
-				prob = (float(Count[k][1][call])+pc)/(sum(subset.values())+pc*len(alpha2))
+				prob = (float(Count[k][1][call])+float(pc))/(sum(subset.values())+float(pc)*len(alpha2))
 			probability_2[k][call] =  prob
 			F2[k][call] = prob
 	Freq2_DF = pandas.DataFrame(F2)

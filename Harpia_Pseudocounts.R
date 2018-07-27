@@ -83,7 +83,7 @@ ui <- dashboardPage(skin = "black",
                         #img(src='myImage.png', align = "right")
                       ),
                       conditionalPanel(
-                        condition = "input.run%2 == 1",
+                        condition = "input.run",
                         
                         fluidRow(
                           headerPanel(
