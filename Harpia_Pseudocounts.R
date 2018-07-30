@@ -26,12 +26,14 @@ source("getDataStructure.R")
 source("linearModel.R")
 
 
-ui <- dashboardPage(skin = "black",
+ui <- dashboardPage(
+  themeSelector(),
                     dashboardHeader(title = 'Harpia'),
                     
                     
                     dashboardSidebar(
-                      tags$p(), tags$hr(),
+                      tags$p(), 
+                      wellPanel(
                       fluidRow(
                         column(2, offset = 0, 
                                shinyDirButton('folder_G1', 'Group 1', 'Please select a folder')),
@@ -53,21 +55,24 @@ ui <- dashboardPage(skin = "black",
                         textInput("label2","Label for Group 2:","")
                       ),
                       helpText("Please upload folders containg tab delimited .csv files. "),
+                      
                       tags$p(), #tags$hr(),
                       fileInput("fileAlphabet", "Choose Alphabet File", accept = c(
                         "text/csv",
                         "text/comma-separated-values,text/plain",
-                        ".csv")),
-                      tags$p(), tags$hr(),
+                        ".csv"))),
+                      tags$p(), 
+                      wellPanel(
+                        
                       selectInput("selectH", label = h4("Select Entropy Level for Analysis"),
                                   choices = list("-" = 0, "H2" = 2, "H3" = 3, "H4" = 4)),
                       
                       selectInput("pseudocount", label = h4("Select Pseudocount value for Analysis"),
-                                  choices = list("No pseudocounts" = 0, "1" = 1, "0.5" = 0.5, "1/n" = "pc")),
+                                  choices = list("No pseudocounts" = 0, "1" = 1, "0.5" = 0.5, "1/n" = "pc"))
+                      ),
                       
-                      tags$hr(),
-                      
-                      actionButton("run", "Run!")
+                      wellPanel(
+                      actionButton("run", "Run!"))
                       
                       
                     ) ,
