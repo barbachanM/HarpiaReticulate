@@ -54,15 +54,15 @@ ui <- dashboardPage(skin = "black",
                       
                       conditionalPanel(
                         condition = ("input.run == 0"),
-                        h3("Upload Step"),
-                        htmlOutput("directorypath"),tags$p(),
-                        htmlOutput("directorypath2"),
+                        
+                        tags$p(),
+                      
                         
                         tabItems(
                           tabItem(tabName = "folder",
-                                  h2("Folder upload"),
+                                  h3("Folder upload"),
                                   
-                                  wellPanel(
+                                  box(
                                     fluidRow(
                                       column(2, offset = 0, 
                                              shinyDirButton('folder_G1', 'Group 1', 'Please select a folder')),
@@ -72,7 +72,8 @@ ui <- dashboardPage(skin = "black",
                                     conditionalPanel(
                                       condition = "input.labelcheck == true",
                                       textInput("label1","Label for Group 1:","")
-                                    ),tags$p(),
+                                    ),htmlOutput("directorypath")),tags$p(),
+                                    box(
                                     fluidRow(
                                       column(2, offset = 0, 
                                              shinyDirButton('folder_G2', 'Group 2', 'Please select a folder')),
@@ -82,12 +83,12 @@ ui <- dashboardPage(skin = "black",
                                     conditionalPanel(
                                       condition = "input.label2check == true",
                                       textInput("label2","Label for Group 2:","")
-                                    ),
+                                    ),htmlOutput("directorypath2")),
                                     helpText("Please upload folders containg tab delimited .csv files. ")
-                          )),
+                          ),
                           
                           tabItem(tabName = "file",
-                                  h2("Alphabet file upload"),
+                                  h3("Alphabet file upload"),
                                   
                                   fileInput("fileAlphabet", "Choose Alphabet File", accept = c(
                                     "text/csv",
@@ -95,7 +96,7 @@ ui <- dashboardPage(skin = "black",
                                     ".csv"))), 
                                   
                                   tabItem(tabName = "entropy",
-                                          h2("Select Entropy Level"),
+                                          h3("Select Entropy Level"),
                                           
                                           wellPanel(
                                             
@@ -103,7 +104,7 @@ ui <- dashboardPage(skin = "black",
                                                         choices = list("-" = 0, "H2" = 2, "H3" = 3, "H4" = 4)))
                                           ),
                                   tabItem(tabName = "pc",
-                                          h2("Select pseudo count level"),
+                                          h3("Select pseudo count level"),
                                           
                                           selectInput("pseudocount", label = h4("Select Pseudocount value for Analysis"),
                                                       choices = list("No pseudocounts" = 0, "1" = 1, "0.5" = 0.5, "1/n" = "pc"))
@@ -120,16 +121,15 @@ ui <- dashboardPage(skin = "black",
                           headerPanel(
                             'Analysis Output'),downloadButton("download", "Download Results"),tags$p(),
                           #textOutput("x"),
-                          tabsetPanel( id = "tabset",
+                          tabsetPanel(id = "tabset",
                             tabPanel("Entropy Analysis"
                                      ,plotOutput("plot1"), tags$hr(),downloadButton('downloadPlot1', 'Download Plot')
                             ),
                             tabPanel("Markov Model Graphs", tags$div(class="header", checked=NA, tags$em(bsButton("help2","Info", icon = NULL, style = "inverse",size = "small", type = "action", block = FALSE, disabled = FALSE, value = FALSE))),fluidRow(
-                              column(3,
-                                     box(plotOutput("plot5"),downloadButton('downloadPlot5', 'Download Plot'))),
-                              column(3,
-                                     box(plotOutput("plot6"),downloadButton('downloadPlot6', 'Download Plot')))
-                            )),
+                              box(plotOutput("plot5"),downloadButton('downloadPlot5', 'Download Plot')), box(plotOutput("plot6"),downloadButton('downloadPlot6', 'Download Plot')))),
+                           
+                                     
+                           
                             
                               # box(plotOutput("plot5"),downloadButton('downloadPlot5', 'Download Plot'))
                               #        ,tags$hr(),plotOutput("plot6"),downloadButton('downloadPlot6', 'Download Plot'))
