@@ -1259,7 +1259,7 @@ server <- shinyServer(function(input, output, session) {
     
     output$download <- downloadHandler(
       filename = function() {
-        paste("output", "zip", sep=".")
+        paste("Harpia_Output", "zip", sep=".")
       },
       content = function(fname) {
         fs <- c()
@@ -1269,19 +1269,9 @@ server <- shinyServer(function(input, output, session) {
         print(plot1())
         #print(plotGRAPH5())
         Group1_Data = EntropyAnalysisGroup1()
-        #print(Group1_Data$observations)
-        
+
         countGroup1 = Group1_Data$Counts2
-        #print(countGroup1[)
-        #rownames(countGroup1) = countGroup1["Call",]
-        # observations = c()
-        # for (n in alphabetH2){
-        #   aux = c()
-        #   call = unlist(strsplit(n,'\t', fixed=FALSE))
-        #   aux = rep(call,countGroup1[[n]])
-        #   observations = c(observations,aux)
-        # }
-        #names(countGroup1) = alphabetH2
+
         markovModelH2 = markovchainFit(data=Group1_Data$observations)
         tpmH2 = as.matrix(markovModelH2$estimate@transitionMatrix)
         
