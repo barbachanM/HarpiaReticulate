@@ -39,15 +39,12 @@ ui <- dashboardPage(skin = "black",
                         menuItem("Pseudo count", tabName = "pc", icon = icon("far fa-plus"))
                       ),
                     
-                      wellPanel(
-                        actionButton("run", "Run!"))
+                      box(title = "Run Harpia!", solidHeader = T, width = 12,collapsible = TRUE,background = "black",align = "left",
+                        actionButton("run", icon(name = "refresh", class = "fa 3x fa-spin"), width = '85%'
+                                     ))
                       
                       ),
-                      
-                     
-                      
-                      
-                     
+
                     
                     dashboardBody(
                       useShinyjs(),
@@ -61,8 +58,8 @@ ui <- dashboardPage(skin = "black",
                         tabItems(
                           tabItem(tabName = "folder",
                                   h3("Folder upload"),
-                                  
-                                  box(
+                                  helpText("Please upload folders containg tab delimited files."),
+                                  box(title = "Folder 1", solidHeader = T,
                                     fluidRow(
                                       column(2, offset = 0, 
                                              shinyDirButton('folder_G1', 'Group 1', 'Please select a folder')),
@@ -73,7 +70,7 @@ ui <- dashboardPage(skin = "black",
                                       condition = "input.labelcheck == true",
                                       textInput("label1","Label for Group 1:","")
                                     ),htmlOutput("directorypath")),tags$p(),
-                                    box(
+                                    box(title = "Folder 2", solidHeader = T,
                                     fluidRow(
                                       column(2, offset = 0, 
                                              shinyDirButton('folder_G2', 'Group 2', 'Please select a folder')),
@@ -83,31 +80,30 @@ ui <- dashboardPage(skin = "black",
                                     conditionalPanel(
                                       condition = "input.label2check == true",
                                       textInput("label2","Label for Group 2:","")
-                                    ),htmlOutput("directorypath2")),
-                                    helpText("Please upload folders containg tab delimited .csv files. ")
+                                    ),htmlOutput("directorypath2"))
+                                    
                           ),
                           
                           tabItem(tabName = "file",
-                                  h3("Alphabet file upload"),
-                                  
+                                  box(title = "Alphabet file upload", solidHeader = T, width = 12,
                                   fileInput("fileAlphabet", "Choose Alphabet File", accept = c(
                                     "text/csv",
                                     "text/comma-separated-values,text/plain",
-                                    ".csv"))), 
+                                    ".csv")))), 
                                   
                                   tabItem(tabName = "entropy",
-                                          h3("Select Entropy Level"),
                                           
-                                          wellPanel(
+                                          
+                                          box(  solidHeader = T, width = 12, 
                                             
                                             selectInput("selectH", label = h4("Select Entropy Level for Analysis"),
                                                         choices = list("-" = 0, "H2" = 2, "H3" = 3, "H4" = 4)))
                                           ),
                                   tabItem(tabName = "pc",
-                                          h3("Select pseudo count level"),
                                           
+                                          box( solidHeader = T, width = 12, 
                                           selectInput("pseudocount", label = h4("Select Pseudocount value for Analysis"),
-                                                      choices = list("No pseudocounts" = 0, "1" = 1, "0.5" = 0.5, "1/n" = "pc"))
+                                                      choices = list( "1" = 1, "0.5" = 0.5, "1/n" = "pc","No pseudocounts" = 0)))
                           )
                         )
                       )
@@ -140,7 +136,7 @@ ui <- dashboardPage(skin = "black",
                                                                                         size = "small", type = "action", block = FALSE, disabled = FALSE,
                                                                                         value = FALSE)
                                                                        )
-                            ),verbatimTextOutput("summaryMLE"),downloadButton('downloadsummaryMLE', 'Download Summary'),tags$hr(),plotOutput("plot3"),downloadButton('downloadPlot3', 'Download Plot'),tags$hr(),plotOutput("plot4"),downloadButton('downloadPlot4', 'Download Plot'), plotOutput("plot2"),downloadButton('downloadPlot2', 'Download Plot')
+                            ),verbatimTextOutput("summaryMLE"),downloadButton('downloadsummaryMLE', 'Download Summary'),tags$hr(),fluidRow(box(plotOutput("plot3"),downloadButton('downloadPlot3', 'Download Plot')),box(plotOutput("plot4"),downloadButton('downloadPlot4', 'Download Plot'))), plotOutput("plot2"),downloadButton('downloadPlot2', 'Download Plot')
                             ,tags$hr()
                             
                             ), 
@@ -529,11 +525,23 @@ server <- shinyServer(function(input, output, session) {
         outputOptions(output,"plot2",suspendWhenHidden=FALSE)
         MLEData = lmerAnalysis()
         MLEData = MLEData$MLEData
-        return({boxplot(Entropy ~ Genotype*Level,
-                        col=c("white","lightgray"),
-                        las = 2,ylab ="Entropy", 
-                        xlab ="Group and Level",cex.lab=1.3, cex.axis=0.6, cex.main=1.5,MLEData)
-          #means <- tapply(MLEData$Genotype,MLEData$Level,mean)
+        x = interaction(MLEData$Genotype,MLEData$Level)
+        if(input$label1 != ""){
+          label1 = input$label1
+        }
+        else{label1 = "Group1" }
+        if(input$label2 != ""){
+          label2 = input$label2
+        }
+        else{label2 = "Group2" }
+        return({
+          ggplot(MLEData, aes(x= x , y=Entropy,  fill= Genotype)) + geom_boxplot() + scale_fill_manual(labels=c(label1,label2),values=c('brown4','darkslategray'))
+          
+          #boxplot(Entropy ~ Genotype*Level,
+          #               col=c("white","lightgray"),
+          #               las = 2,ylab ="Entropy", 
+          #               xlab ="Group and Level",cex.lab=1.3, cex.axis=0.6, cex.main=1.5,MLEData)
+          # #means <- tapply(MLEData$Genotype,MLEData$Level,mean)
           #points(means,col="red",pch=18)
           # abline(means)
         })
@@ -596,7 +604,7 @@ server <- shinyServer(function(input, output, session) {
 
     
     plot4 = reactive({if(!is.null(lmerAnalysis())){
-      outputOptions(output,"plot4",suspendWhenHidden=FALSE)
+      #outputOptions(output,"plot4",suspendWhenHidden=FALSE)
       mle = isolate(lmerAnalysis())
       return({qqnorm(resid(mle$mod1))
         qqline(resid(mle$mod1))
@@ -1263,27 +1271,25 @@ server <- shinyServer(function(input, output, session) {
       },
       content = function(fname) {
         fs <- c()
-        # tmpdir <- tempdir()
-        # setwd(tempdir())
+        tmpdir <- tempdir()
+        setwd(tempdir())
+        
         pdf("HarpiaGraphics.pdf")
         print(plot1())
         #print(plotGRAPH5())
+        
         Group1_Data = EntropyAnalysisGroup1()
-
+       
+        
         countGroup1 = Group1_Data$Counts2
 
         markovModelH2 = markovchainFit(data=Group1_Data$observations)
         tpmH2 = as.matrix(markovModelH2$estimate@transitionMatrix)
         
         g <- graph.adjacency(tpmH2, weighted=TRUE)
-        # complicatedCalls = intersect(unique(observations),c("Cx", "Ts", "Fs", "Ha", "C"))
-        # otherCalls = setdiff(unique(observations),complicatedCalls)
-        callOrder = unique(Group1_Data$observations)
-        V(g)$color =  "gray40"
-        # for (calls in complicatedCalls){
-        #   V(g)[calls]$color = "firebrick3"
-        # }
         
+        callOrder = unique(Group1_Data$observations)
+        V(g)$color =  "brown4"
         E(g)$weight = edge.betweenness(g)
         deg <- degree(g, mode="all")
         V(g)$size <- deg*2
@@ -1292,7 +1298,11 @@ server <- shinyServer(function(input, output, session) {
         E(g)$width <- edge.betweenness(g)*.06
         #E(g)$width <- E(g)$weight*.06
         V(g)$label.cex = .7
-        return(plot(g, main = "Transition Graph for Group 1", layout=layout_in_circle(g), vertex.label.color= "white",
+        if(input$label1 != ""){
+          main = paste("Transition Graph for",input$label1, sep=" ")
+        }
+        else{main ="Transition Graph for Group 1" }
+        print(plot(g, main = main, layout=layout_in_circle(g), vertex.label.color= "white",
                     vertex.label.family = "Helvetica", edge.label.font = 2))
         
         Group2_Data = EntropyAnalysisGroup2()
@@ -1304,7 +1314,7 @@ server <- shinyServer(function(input, output, session) {
         # complicatedCalls = intersect(unique(observations),c("Cx", "Ts", "Fs", "Ha", "C"))
         # otherCalls = setdiff(unique(observations),complicatedCalls)
         callOrder = unique(Group2_Data$observations)
-        V(g)$color =  "gray51"
+        V(g)$color =  "darkslategray"
         # for (calls in complicatedCalls){
         #   V(g)[calls]$color = "firebrick3"
         # }
@@ -1317,9 +1327,12 @@ server <- shinyServer(function(input, output, session) {
         E(g)$width <- edge.betweenness(g)*.06
         #E(g)$width <- E(g)$weight*.06
         V(g)$label.cex = .7
-        return(plot(g, main = "Transition Graph for Group 2 ", layout=layout_in_circle(g), vertex.label.color= "white",
+        if(input$label2 != ""){
+          main = paste("Transition Graph for",input$label2, sep=" ")
+        }
+        else{main ="Transition Graph for Group 2 " }
+        print(plot(g, main = main, layout=layout_in_circle(g), vertex.label.color= "white",
                     vertex.label.family = "Helvetica", edge.label.font = 2))
-        #plot(plot6())
         
         
         #text(summaryMLE())
@@ -1327,17 +1340,31 @@ server <- shinyServer(function(input, output, session) {
         
         #plot(lmerAnalysis())
         MLEData = lmerAnalysis()
+        print(plot2())
+        mle = isolate(lmerAnalysis())
+        print({qqnorm(resid(mle$mod1))
+          qqline(resid(mle$mod1))})
         print(plot3())
-      
-        qqnorm(resid(MLEData$mod1))
-        qqline(resid(MLEData$mod1))
         
-        MLEData = MLEData$MLEData
-        boxplot(Entropy ~ Genotype*Level,
-                        col=c("white","lightgray"),
-                        las = 2,ylab ="Entropy", 
-                        xlab ="Group and Level",cex.lab=1.3, cex.axis=0.6, cex.main=1.5,MLEData)
-        #print(plot2())
+      
+        # qqnorm(resid(MLEData$mod1))
+        # qqline(resid(MLEData$mod1))
+        
+        
+        
+        # MLEData = MLEData$MLEData
+        # 
+        # x = interaction(MLEData$Genotype,MLEData$Level)
+        # if(input$label1 != ""){
+        #   label1 = input$label1
+        # }
+        # else{label1 = "Group1" }
+        # if(input$label2 != ""){
+        #   label2 = input$label2
+        # }
+        # else{label2 = "Group2" }
+        # print(
+        #   ggplot(MLEData, aes(x= x , y=Entropy,  fill= Genotype)) + geom_boxplot() + scale_fill_manual(labels=c(label1,label2),values=c('brown4','darkslategray')))
         #print(borutaplot())
         calls.boruta = boruta()
         plot(calls.boruta, colCode = c("darkseagreen4", "goldenrod1", "firebrick", "dodgerblue3"))
@@ -1345,10 +1372,13 @@ server <- shinyServer(function(input, output, session) {
         # print(borutaStats())
         dev.off()
         fs = c(fs, "HarpiaGraphics.pdf")
-        write.csv(borutaStats(), "BorutaStats.csv", row.names = T)
+        stats  = attStats(calls.boruta)
+        write.csv(stats, "BorutaStats.csv", row.names = T)
         fs = c(fs, "BorutaStats.csv")
-        write.table(paste(summaryMLE(),collapse="\n"), "LinearModel.txt"
-                    ,col.names=FALSE)
+      
+        out<-capture.output(summaryMLE())
+        cat(out,file="LinearModel.txt",sep="\n",append=TRUE)
+      
         fs = c(fs, "LinearModel.txt")
         
         zip(zipfile=fname, files=fs)
