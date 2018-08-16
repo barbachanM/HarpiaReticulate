@@ -119,10 +119,13 @@ ui <- dashboardPage(skin = "black",
                           #textOutput("x"),
                           tabsetPanel(id = "tabset",
                             tabPanel("Entropy Analysis"
-                                     ,plotOutput("plot1"), tags$hr(),downloadButton('downloadPlot1', 'Download Plot')
+                                     ,plotOutput("plot1"), tags$hr()#,downloadButton('downloadPlot1', 'Download Plot')
                             ),
                             tabPanel("Markov Model Graphs", tags$div(class="header", checked=NA, tags$em(bsButton("help2","Info", icon = NULL, style = "inverse",size = "small", type = "action", block = FALSE, disabled = FALSE, value = FALSE))),fluidRow(
-                              box(plotOutput("plot5"),downloadButton('downloadPlot5', 'Download Plot')), box(plotOutput("plot6"),downloadButton('downloadPlot6', 'Download Plot')))),
+                              box(plotOutput("plot5")#,downloadButton('downloadPlot5', 'Download Plot')
+                                  ), box(plotOutput("plot6")#,downloadButton('downloadPlot6', 'Download Plot')
+                                         ))
+                              ),
                            
                                      
                            
@@ -136,7 +139,12 @@ ui <- dashboardPage(skin = "black",
                                                                                         size = "small", type = "action", block = FALSE, disabled = FALSE,
                                                                                         value = FALSE)
                                                                        )
-                            ),verbatimTextOutput("summaryMLE"),downloadButton('downloadsummaryMLE', 'Download Summary'),tags$hr(),fluidRow(box(plotOutput("plot3"),downloadButton('downloadPlot3', 'Download Plot')),box(plotOutput("plot4"),downloadButton('downloadPlot4', 'Download Plot'))), plotOutput("plot2"),downloadButton('downloadPlot2', 'Download Plot')
+                            ),verbatimTextOutput("summaryMLE")#,downloadButton('downloadsummaryMLE', 'Download Summary')
+                            ,tags$hr(),
+                            fluidRow(box(plotOutput("plot3")#,downloadButton('downloadPlot3', 'Download Plot')
+                                         ),box(plotOutput("plot4")#,downloadButton('downloadPlot4', 'Download Plot')
+                                               )
+                                     ), plotOutput("plot2")#,downloadButton('downloadPlot2', 'Download Plot')
                             ,tags$hr()
                             
                             ), 
@@ -152,9 +160,10 @@ ui <- dashboardPage(skin = "black",
                                                                                          value = FALSE)
                                                                         )
                             ),selectInput("selectB", label = h4("Select Entropy Level for Classification", bsTooltip("selectB", "The entropy level of the analysis should be chosen based on the linear model result found on the Linear Model Analysis tab.",                                                                                                                                     placement = "right", trigger = "hover")),
-                                          choices = list("-" = 0, "H1" = 1, "H2" = 2, "H3" = 3, "H4" = 4)),plotOutput("borutaplot"),downloadButton('downloadborutaplot', 'Download Plot')
+                                          choices = list("-" = 0, "H1" = 1, "H2" = 2, "H3" = 3, "H4" = 4)),plotOutput("borutaplot")#,downloadButton('downloadborutaplot', 'Download Plot')
                             ,tags$hr()#,verbatimTextOutput("boruta"),downloadButton('borutaOutcome', 'Download Boruta Outcome')
-                            ,tags$hr(),tableOutput("bStats"),downloadButton('borutaStats', 'Download Boruta Outcome'))
+                            ,tags$hr(),tableOutput("bStats")#,downloadButton('borutaStats', 'Download Boruta Outcome')
+                            )
                             
                             
                            
@@ -535,7 +544,7 @@ server <- shinyServer(function(input, output, session) {
         }
         else{label2 = "Group2" }
         return({
-          ggplot(MLEData, aes(x= x , y=Entropy,  fill= Genotype)) + geom_boxplot() + scale_fill_manual(labels=c(label1,label2),values=c('brown4','darkslategray'))
+          ggplot(MLEData, aes(x= x , y=Entropy,  fill= Genotype)) + geom_boxplot() + scale_fill_manual(labels=c(label1,label2),values=c('brown4','darkslategray')) + labs(x = "Genotype*Level", y = "Entropy")
           
           #boxplot(Entropy ~ Genotype*Level,
           #               col=c("white","lightgray"),
@@ -1274,7 +1283,7 @@ server <- shinyServer(function(input, output, session) {
         tmpdir <- tempdir()
         setwd(tempdir())
         
-        pdf("HarpiaGraphics.pdf")
+        pdf("HarpiaGraphics.pdf", width = 8, height = 6)
         print(plot1())
         #print(plotGRAPH5())
         
@@ -1367,7 +1376,7 @@ server <- shinyServer(function(input, output, session) {
         #   ggplot(MLEData, aes(x= x , y=Entropy,  fill= Genotype)) + geom_boxplot() + scale_fill_manual(labels=c(label1,label2),values=c('brown4','darkslategray')))
         #print(borutaplot())
         calls.boruta = boruta()
-        plot(calls.boruta, colCode = c("darkseagreen4", "goldenrod1", "firebrick", "dodgerblue3"))
+        plot(calls.boruta, colCode = c("darkseagreen4", "goldenrod1", "firebrick", "dodgerblue3"),las = 2, cex.axis=.8)
         #plotImpHistory(b, xlab = "Classifier run",ylab = "Importance")
         # print(borutaStats())
         dev.off()
