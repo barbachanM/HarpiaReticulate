@@ -25,14 +25,15 @@ source("getAlphabets.R")
 source("getDataStructure.R")
 source("linearModel.R")
 
-
+jscode <- "shinyjs.refresh = function() { history.go(0); }"
 ui <- dashboardPage(skin = "black",
   
                     dashboardHeader(title = 'Harpia'),
                     
                     
                     dashboardSidebar(
-                      sidebarMenu(
+                      shinyjs::useShinyjs(),
+                      sidebarMenu(id = "mySidebar",
                         menuItem("Folder Uploads", tabName = "folder", icon = icon("far fa-folder")),
                         menuItem("Alphabet Upload",tabName = "file", icon = icon("far fa-file")),
                         menuItem("Entropy level", tabName = "entropy", icon = icon("far fa-bar-chart")),
@@ -40,7 +41,7 @@ ui <- dashboardPage(skin = "black",
                       ),
                     
                       box(title = "Run Harpia!", solidHeader = T, width = 12,collapsible = TRUE,background = "black",align = "left",
-                        actionButton("run", icon(name = "refresh", class = "fa 3x fa-spin"), width = '85%'
+                        actionButton("run", icon(name = "fas fa-play", class = "fa 4x"), width = '85%'
                                      ))
                       
                       ),
@@ -48,7 +49,7 @@ ui <- dashboardPage(skin = "black",
                     
                     dashboardBody(
                       useShinyjs(),
-                      
+                      extendShinyjs(text = jscode),
                       conditionalPanel(
                         condition = ("input.run == 0"),
                         
@@ -103,7 +104,7 @@ ui <- dashboardPage(skin = "black",
                                           
                                           box( solidHeader = T, width = 12, 
                                           selectInput("pseudocount", label = h4("Select Pseudocount value for Analysis"),
-                                                      choices = list( "1" = 1, "0.5" = 0.5, "1/n" = "pc","No pseudocounts" = 0)))
+                                                      choices = list( "1/N" = "pc","1" = 1, "0.5" = 0.5, "0" = 0)))
                           )
                         )
                       )
@@ -114,8 +115,12 @@ ui <- dashboardPage(skin = "black",
                         condition = "input.run",
                         
                         fluidRow(
-                          headerPanel(
-                            'Analysis Output'),downloadButton("download", "Download Results"),tags$p(),
+                          headerPanel("Your Harpia Results"),
+                          fluidRow(
+                                   
+                         downloadButton("download", "Download"),
+                          
+                           actionButton("refresh", "Refresh",icon(name = "refresh", class = "fa 4x fa-spin"))),tags$style(type='text/css', "#download {margin-left: 15px;}"),
                           #textOutput("x"),
                           tabsetPanel(id = "tabset",
                             tabPanel("Entropy Analysis"
@@ -509,8 +514,15 @@ server <- shinyServer(function(input, output, session) {
         
         Group2_Data = EntropyAnalysisGroup2()
         Group1_Data = EntropyAnalysisGroup1()
-        LM1 = linearModelR(Group1_Data$levels, Group1_Data$Entropy, "1")
-        LM2 = linearModelR(Group2_Data$levels, Group2_Data$Entropy, "2")
+        if(input$label1 != ""){
+          label1 = input$label1
+        }
+        else{label1 = "Group1" }
+        if(input$label2 != ""){
+          label2 = input$label2
+        }
+        LM1 = linearModelR(Group1_Data$levels, Group1_Data$Entropy, label1)
+        LM2 = linearModelR(Group2_Data$levels, Group2_Data$Entropy, label2)
         
         G1_LM = (LM1$LM)
         #G1_LM = lapply(G1_LM[,2], as.numeric)
@@ -655,62 +667,8 @@ server <- shinyServer(function(input, output, session) {
       }
     )
     },message = 'Analyzing...' )
-    # output$downloadsummaryMLE <- downloadHandler(
-    #   filename = "LinearModel_Output3.png",
-    #   content = function(file){
-    #     pdf(file)
-    #     print(summaryMLE())
-    #     dev.off()
-    #     
-    #   })  
-    # 
-    
-    # output$downloadsummaryMLE <- downloadHandler(
-    #   filename = "analysis-output.txt",
-    #   content = function(file){
-    #     #mle = isolate(lmerAnalysis())
-    #     str = c()
-    #    
-    #     write.table(paste(text,collapse=", "), file,col.names=FALSE)
-    #     # out = capture.output(summaryMLE())
-    #     # cat("My title", out, file="analysis-output.txt", sep="n", append=TRUE)
-    #   
-    #     for (line in 1:length(isolate(summaryMLE()))){
-    #       str = c(str,unlist(strsplit(as.character(summaryMLE()[line]), "\n")))
-    #       #textplot(unlist(strsplit(as.character(summaryMLE()[line]), "\n")))
-    # 
-    #     }
-    #     write.table(str, file,col.names=FALSE)
-    #     #dev.off()
-    #     #print(str)
-    #     #str = unlist(strsplit(as.character(summaryMLE()[1]), "\n"))
-    #     #lapply(str, write, "analysis-output.txt", append=TRUE)
-    #     
-    #   })
-  
-  
-  # Sample pdf-generating function:
 
-    
-    
-    
-    # output$downloadsummaryMLE <- downloadHandler(
-    #   filename = function(){
-    #     paste("LMER_Summary-", Sys.Date(), ".txt", sep = "")
-    #   },
-    #   content = function(file) {
-    #     writeLines(paste(summaryMLE(), sep = "\n"))
-    #   })
-
-    
-    # output$downloadData = downloadHandler(
-    #   filename = 'test.pdf',
-    #   content = function(file) {
-    #     print(summaryMLE())
-    #     dev.copy2pdf(file = file, width=12, height=8, out.type="pdf")
-    #   })
-    # 
-    ## Markov Graphf
+    ## Markov Graph
     
     plotGRAPH5 = reactive({if(!is.null(EntropyAnalysisGroup1())){
       Group1_Data = EntropyAnalysisGroup1()
@@ -1041,7 +999,7 @@ server <- shinyServer(function(input, output, session) {
         borutaDF = rbind(groupDataGroup2,groupDataGroup1)
         #colnames(borutaDF)[ncol(borutaDF)] = "Group"
        # borutaDF[,"Group"] = as.factor( borutaDF[,"Group"])
-        print(typeof(borutaDF))
+        #print(typeof(borutaDF))
         borutaDF = as.data.frame(borutaDF)
         #colnames(borutaDF) = c(alphabetH1, "Group")
         
@@ -1118,8 +1076,8 @@ server <- shinyServer(function(input, output, session) {
       if(!is.null(boruta())){
         calls.boruta = boruta()
         stats = attStats(calls.boruta)
-        stats = subset(stats, decision == "Confirmed")
-        return(stats)
+        statsConfirmed = subset(stats, decision == "Confirmed")
+        return(statsConfirmed)
       }
       else(stop("Upload folder") )
       
@@ -1134,7 +1092,8 @@ server <- shinyServer(function(input, output, session) {
     # 
     
     output$bStats =  renderTable({
-      borutaStats()},include.rownames=TRUE
+      borutaStats()
+     },include.rownames=TRUE
     )
     output$borutaStats <- downloadHandler(
       filename = function(){
@@ -1349,40 +1308,41 @@ server <- shinyServer(function(input, output, session) {
         
         #plot(lmerAnalysis())
         MLEData = lmerAnalysis()
-        print(plot2())
+        #print(plot2())
         mle = isolate(lmerAnalysis())
         print({qqnorm(resid(mle$mod1))
           qqline(resid(mle$mod1))})
+      
         print(plot3())
-        
       
         # qqnorm(resid(MLEData$mod1))
         # qqline(resid(MLEData$mod1))
         
         
         
-        # MLEData = MLEData$MLEData
-        # 
-        # x = interaction(MLEData$Genotype,MLEData$Level)
-        # if(input$label1 != ""){
-        #   label1 = input$label1
-        # }
-        # else{label1 = "Group1" }
-        # if(input$label2 != ""){
-        #   label2 = input$label2
-        # }
-        # else{label2 = "Group2" }
-        # print(
-        #   ggplot(MLEData, aes(x= x , y=Entropy,  fill= Genotype)) + geom_boxplot() + scale_fill_manual(labels=c(label1,label2),values=c('brown4','darkslategray')))
+        MLEData = MLEData$MLEData
+
+        x = interaction(MLEData$Genotype,MLEData$Level)
+        if(input$label1 != ""){
+          label1 = input$label1
+        }
+        else{label1 = "Group1" }
+        if(input$label2 != ""){
+          label2 = input$label2
+        }
+        else{label2 = "Group2" }
+        print(
+          ggplot(MLEData, aes(x= x , y=Entropy,  fill= Genotype)) + geom_boxplot() + scale_fill_manual(labels=c(label1,label2),values=c('brown4','darkslategray')))
         #print(borutaplot())
-        calls.boruta = boruta()
-        plot(calls.boruta, colCode = c("darkseagreen4", "goldenrod1", "firebrick", "dodgerblue3"),las = 2, cex.axis=.8)
+       calls.boruta = boruta()
+        plot(calls.boruta, colCode = c("darkseagreen4", "goldenrod1", "firebrick", "dodgerblue3"),las = 2, cex.axis=.4)
         #plotImpHistory(b, xlab = "Classifier run",ylab = "Importance")
         # print(borutaStats())
         dev.off()
         fs = c(fs, "HarpiaGraphics.pdf")
         stats  = attStats(calls.boruta)
         write.csv(stats, "BorutaStats.csv", row.names = T)
+        #bstats = borutaStats()
         fs = c(fs, "BorutaStats.csv")
       
         out<-capture.output(summaryMLE())
@@ -1413,6 +1373,10 @@ server <- shinyServer(function(input, output, session) {
                content="Feature selection algorithm using Random Forest classification. It iteratively removes features proved to be less relevant than random probes", placement = "bottom",
                trigger = "click", options = NULL)
     
+    
+    observeEvent(input$refresh, {
+      js$refresh();
+    })
     
     
     
