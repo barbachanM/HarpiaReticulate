@@ -19,6 +19,7 @@ library(ggedit)
 library(plotly)
 library(devtools)
 library(reticulate)
+library(caret)
 
 
 source("getAlphabets.R")
@@ -127,8 +128,8 @@ ui <- dashboardPage(skin = "black",
                                      ,plotOutput("plot1"), tags$hr()#,downloadButton('downloadPlot1', 'Download Plot')
                             ),
                             tabPanel("Markov Model Graphs", tags$div(class="header", checked=NA, tags$em(bsButton("help2","Info", icon = NULL, style = "inverse",size = "small", type = "action", block = FALSE, disabled = FALSE, value = FALSE))),fluidRow(
-                              box(plotOutput("plot5")#,downloadButton('downloadPlot5', 'Download Plot')
-                                  ), box(plotOutput("plot6")#,downloadButton('downloadPlot6', 'Download Plot')
+                              box(plotOutput("plot5",width = "100%",height = "100%")#,downloadButton('downloadPlot5', 'Download Plot')
+                                  ), box(plotOutput("plot6",width = "100%",height = "100%")#,downloadButton('downloadPlot6', 'Download Plot')
                                          ))
                               ),
                            
@@ -688,29 +689,61 @@ server <- shinyServer(function(input, output, session) {
       markovModelH2 = markovchainFit(data=Group1_Data$observations)
       tpmH2 = as.matrix(markovModelH2$estimate@transitionMatrix)
       
-      g <- graph.adjacency(tpmH2, weighted=TRUE)
-      # complicatedCalls = intersect(unique(observations),c("Cx", "Ts", "Fs", "Ha", "C"))
-      # otherCalls = setdiff(unique(observations),complicatedCalls)
+      g <- graph.adjacency(tpmH2, weighted=TRUE, mode = "directed")
+      print(g)
+      complicatedCalls = intersect(unique(Group1_Data$observations),c("Cx", "Ts", "Fs", "Ha", "C"))
+      otherCalls = setdiff(unique(Group1_Data$observations),complicatedCalls)
       callOrder = unique(Group1_Data$observations)
-      V(g)$color =  "brown4"
+      #V(g)$color =  "brown4"
       # for (calls in complicatedCalls){
       #   V(g)[calls]$color = "firebrick3"
       # }
-      
+      for (calls in complicatedCalls){
+        V(g)[calls]$color = "firebrick"
+      }
+      for (calls in otherCalls){
+        V(g)[calls]$color = "steelblue3"
+      }
+      #V(g)["A"]$color =  "gray"
       E(g)$weight = edge.betweenness(g)
+      print(E(g)$weight)
+      #g.copy <- delete.edges(g, which(E(g)$weight < 4)-1)
       deg <- degree(g, mode="all")
       V(g)$size <- deg*2
-      E(g)$arrow.size <- .1
+      E(g)$arrow.size <- .7
       E(g)$edge.color <- "gray80"
-      E(g)$width <- edge.betweenness(g)*.06
+      E(g)$width <- edge.betweenness(g)*.09
       #E(g)$width <- E(g)$weight*.06
       V(g)$label.cex = .7
+      # g.copy <- delete.edges(g, which(E(g)$weight < 4)-1)
+      # deg <- degree(g, mode="all")
+      # V(g.copy)$size <- deg*2
+      # E(g.copy)$arrow.size <- .8
+      # E(g.copy)$edge.color <- "gray80"
+      # E(g.copy)$width <- edge.betweenness(g.copy)*.4
+      # #E(g)$width <- E(g)$weight*.06
+      # V(g)$label.cex = .7
+
+      
+      #create vector of angles for text based on number of nodes 
+      # (flipping the orientation of the words half way around so none appear 
+      # upside down)
+      out<-capture.output(get.edgelist(g, names=TRUE))
+      cat(out,file="EdgeList.txt",sep="\n",append=F)
+      
+      out<-capture.output(get.adjacency(g, attr="weight", names=TRUE,edges = T))
+      cat(out,file="MatrixAdjacency.txt",sep="\n",append=F)
+     
+      #print(as_adjacency_matrix(g, attr="weight", edges = T))
       if(input$label1 != ""){
         main = paste("Transition Graph for",input$label1, sep=" ")
       }
       else{main ="Transition Graph for Group 1" }
-      return(plot(g, main = main, layout=layout_in_circle(g), vertex.label.color= "white",
-                  vertex.label.family = "Helvetica", edge.label.font = 2))
+      return(
+        plot(g, main = main, layout=layout_in_circle(g,order = c(sort(complicatedCalls),"D","F","H","A","Sh","U")), vertex.label.color= "black",
+                  vertex.label.family = "Helvetica",  vertex.label.font = 1,vertex.label.cex=1.5, edge.arrow.mode = 2)
+             #, edge.loop.angle = ifelse(is.loop(g.copy), 4*pi/3, 0))
+      )
     }
       else(return())
     })
@@ -718,7 +751,7 @@ server <- shinyServer(function(input, output, session) {
       if(!is.null(plotGRAPH5())){
         plotGRAPH5()}
       else(NULL)
-    })
+    },height = 420, width = 420 )
     
     
     output$downloadPlot5 <- downloadHandler(
@@ -740,24 +773,30 @@ server <- shinyServer(function(input, output, session) {
       tpmH2 = as.matrix(markovModelH2$estimate@transitionMatrix)
       
       g <- graph.adjacency(tpmH2, weighted=TRUE)
-      # complicatedCalls = intersect(unique(observations),c("Cx", "Ts", "Fs", "Ha", "C"))
-      # otherCalls = setdiff(unique(observations),complicatedCalls)
-      callOrder = unique(observations)
-      V(g)$color =  "gray40"
+      complicatedCalls = intersect(unique(Group2_Data$observations),c("Cx", "Ts", "Fs", "Ha", "C"))
+      otherCalls = setdiff(unique(Group2_Data$observations),complicatedCalls)
+      callOrder = unique(Group1_Data$observations)
+      #V(g)$color =  "brown4"
       # for (calls in complicatedCalls){
       #   V(g)[calls]$color = "firebrick3"
       # }
-      
+      for (calls in complicatedCalls){
+        V(g)[calls]$color = "firebrick3"
+      }
+      for (calls in otherCalls){
+        V(g)[calls]$color = "blue"
+      }
+      V(g)["A"]$color =  "gray"
       E(g)$weight = edge.betweenness(g)
       deg <- degree(g, mode="all")
       V(g)$size <- deg*2
-      E(g)$arrow.size <- .1
+      E(g)$arrow.size <- .5
       E(g)$edge.color <- "gray80"
       E(g)$width <- edge.betweenness(g)*.06
       #E(g)$width <- E(g)$weight*.06
       V(g)$label.cex = .7
       plot(g, main = "Transition Graph for Group 1", layout=layout_in_circle(g), vertex.label.color= "white",
-                  vertex.label.family = "Helvetica", edge.label.font = 2)
+                  vertex.label.family = "Helvetica", vertex.label.font = 2,vertex.label.cex=1.5)
       dev.off()
     }
     )
@@ -777,29 +816,47 @@ server <- shinyServer(function(input, output, session) {
         markovModelH2 = markovchainFit(data=Group2_Data$observations)
         tpmH2 = as.matrix(markovModelH2$estimate@transitionMatrix)
         
-        g <- graph.adjacency(tpmH2, weighted=TRUE)
+        g <- graph.adjacency(tpmH2, weighted=TRUE, mode = "directed")
         # complicatedCalls = intersect(unique(observations),c("Cx", "Ts", "Fs", "Ha", "C"))
         # otherCalls = setdiff(unique(observations),complicatedCalls)
         callOrder = unique(Group2_Data$observations)
-        V(g)$color =  "darkslategray"
+        #V(g)$color =  "darkslategray"
         # for (calls in complicatedCalls){
         #   V(g)[calls]$color = "firebrick3"
         # }
-        
+        complicatedCalls = intersect(unique(Group2_Data$observations),c("Cx", "Ts", "Fs", "Ha", "C"))
+        otherCalls = setdiff(unique(Group2_Data$observations),complicatedCalls)
+      
+        #V(g)$color =  "brown4"
+        # for (calls in complicatedCalls){
+        #   V(g)[calls]$color = "firebrick3"
+        # }
+        for (calls in complicatedCalls){
+          V(g)[calls]$color = "firebrick"
+        }
+        for (calls in otherCalls){
+          V(g)[calls]$color = "steelblue3"
+        }
+        #V(g)["A"]$color =  "gray"
         E(g)$weight = edge.betweenness(g)
         deg <- degree(g, mode="all")
         V(g)$size <- deg*2
-        E(g)$arrow.size <- .1
+        E(g)$arrow.size <- .7
         E(g)$edge.color <- "gray80"
-        E(g)$width <- edge.betweenness(g)*.06
+        E(g)$width <- edge.betweenness(g)*.09
         #E(g)$width <- E(g)$weight*.06
         V(g)$label.cex = .7
+        out<-capture.output(get.edgelist(g, names=TRUE))
+        cat(out,file="EdgeList2.txt",sep="\n",append=F)
+        
+        out<-capture.output(get.adjacency(g, attr="weight", names=TRUE,edges = T))
+        cat(out,file="MatrixAdjacency2.txt",sep="\n",append=F)
         if(input$label2 != ""){
           main = paste("Transition Graph for",input$label2, sep=" ")
         }
         else{main ="Transition Graph for Group 2 " }
-        return(plot(g, main = main, layout=layout_in_circle(g), vertex.label.color= "white",
-                    vertex.label.family = "Helvetica", edge.label.font = 2))
+        return(plot(g, main = main, layout=layout_in_circle(g, order = c(sort(complicatedCalls),"D","F","H","A","Sh","U")), vertex.label.color= "black",
+                    vertex.label.family = "Helvetica",  vertex.label.font = 1,vertex.label.cex=1.5, vertex.label.dist = 0))
       }
       else(stop("Upload folder") )
       
@@ -807,7 +864,7 @@ server <- shinyServer(function(input, output, session) {
     output$plot6 = renderPlot({ 
       if(!is.null(EntropyAnalysisGroup2())){
         plot6()}
-    })
+    },height = 420, width = 420)
     # output$downloadPlot6 <- downloadHandler(
     #   filename = function() { "TransitionGraphforGroup2Group.png" },
     #   content = function(file) {
@@ -1007,7 +1064,7 @@ server <- shinyServer(function(input, output, session) {
         
         b = Boruta(Group~.,data=borutaDF,pValue = 0.001)
         
-        return(b)}
+        return(c(b,borutaDF))}
       else(return(NULL))
       
     })
@@ -1017,7 +1074,7 @@ server <- shinyServer(function(input, output, session) {
       if(!is.null(boruta())){
         calls.boruta = boruta()
         return(
-          plot(calls.boruta, colCode = c("darkseagreen4", "goldenrod1", "firebrick", "dodgerblue3"),las = 2, cex.axis=.8))
+          plot(calls.boruta$b, colCode = c("darkseagreen4", "goldenrod1", "firebrick", "dodgerblue3"),las = 2, cex.axis=.8))
         #plotImpHistory(b, xlab = "Classifier run",
                        #ylab = "Importance")
       }
@@ -1075,7 +1132,7 @@ server <- shinyServer(function(input, output, session) {
     borutaStats = reactive({ 
       if(!is.null(boruta())){
         calls.boruta = boruta()
-        stats = attStats(calls.boruta)
+        stats = attStats(calls.boruta$b)
         statsConfirmed = subset(stats, decision == "Confirmed")
         return(statsConfirmed)
       }
@@ -1103,6 +1160,20 @@ server <- shinyServer(function(input, output, session) {
         write.csv(borutaStats(), file, row.names = T)
         #write.table(paste(print(borutaStats()),collapse="\t"), file,col.names=T)
       })
+    
+    output$confusionMatrix =  renderTable({
+      borutaData = boruta()
+      borutaAttr=borutaData$b
+      borutaVars <- getSelectedAttributes(borutaAttr)
+      boruta.formula <- formula(paste("Group ~ ", 
+                                      paste(borutaVarsTrain, collapse = " + ")))
+      rfBoruta.fit <- train(boruta.formula, 
+                            data = borutaData$borutaDF, 
+                            method = "rf"
+      )
+     return(rfBoruta.fit$finalModel$confusion) 
+    },include.rownames=TRUE
+    )
     
 
     
@@ -1255,13 +1326,24 @@ server <- shinyServer(function(input, output, session) {
         tpmH2 = as.matrix(markovModelH2$estimate@transitionMatrix)
         
         g <- graph.adjacency(tpmH2, weighted=TRUE)
-        
+        complicatedCalls = intersect(unique(Group1_Data$observations),c("Cx", "Ts", "Fs", "Ha", "C"))
+        otherCalls = setdiff(unique(Group1_Data$observations),complicatedCalls)
         callOrder = unique(Group1_Data$observations)
-        V(g)$color =  "brown4"
+        #V(g)$color =  "brown4"
+        # for (calls in complicatedCalls){
+        #   V(g)[calls]$color = "firebrick3"
+        # }
+        for (calls in complicatedCalls){
+          V(g)[calls]$color = "firebrick"
+        }
+        for (calls in otherCalls){
+          V(g)[calls]$color = "steelblue3"
+        }
+        #V(g)["A"]$color =  "gray"
         E(g)$weight = edge.betweenness(g)
         deg <- degree(g, mode="all")
         V(g)$size <- deg*2
-        E(g)$arrow.size <- .1
+        E(g)$arrow.size <- .5 
         E(g)$edge.color <- "gray80"
         E(g)$width <- edge.betweenness(g)*.06
         #E(g)$width <- E(g)$weight*.06
@@ -1270,8 +1352,8 @@ server <- shinyServer(function(input, output, session) {
           main = paste("Transition Graph for",input$label1, sep=" ")
         }
         else{main ="Transition Graph for Group 1" }
-        print(plot(g, main = main, layout=layout_in_circle(g), vertex.label.color= "white",
-                    vertex.label.family = "Helvetica", edge.label.font = 2))
+        print(plot(g, main = main, layout=layout_in_circle(g,order = c(sort(complicatedCalls),"D","F","H","A","Sh","U")), vertex.label.color= "black",
+                    vertex.label.family = "Helvetica", vertex.label.font = 1,vertex.label.cex=1.5),height = 500, width = 500)
         
         Group2_Data = EntropyAnalysisGroup2()
         
@@ -1279,18 +1361,24 @@ server <- shinyServer(function(input, output, session) {
         tpmH2 = as.matrix(markovModelH2$estimate@transitionMatrix)
         
         g <- graph.adjacency(tpmH2, weighted=TRUE)
-        # complicatedCalls = intersect(unique(observations),c("Cx", "Ts", "Fs", "Ha", "C"))
-        # otherCalls = setdiff(unique(observations),complicatedCalls)
+        complicatedCalls = intersect(unique(Group2_Data$observations),c("Cx", "Ts", "Fs", "Ha", "C"))
+        otherCalls = setdiff(unique(Group2_Data$observations),complicatedCalls)
         callOrder = unique(Group2_Data$observations)
-        V(g)$color =  "darkslategray"
+        #V(g)$color =  "brown4"
         # for (calls in complicatedCalls){
         #   V(g)[calls]$color = "firebrick3"
         # }
-        
+        for (calls in complicatedCalls){
+          V(g)[calls]$color = "firebrick"
+        }
+        for (calls in otherCalls){
+          V(g)[calls]$color = "steelblue3"
+        }
+        #V(g)["A"]$color =  "gray"
         E(g)$weight = edge.betweenness(g)
         deg <- degree(g, mode="all")
         V(g)$size <- deg*2
-        E(g)$arrow.size <- .1
+        E(g)$arrow.size <- .5
         E(g)$edge.color <- "gray80"
         E(g)$width <- edge.betweenness(g)*.06
         #E(g)$width <- E(g)$weight*.06
@@ -1298,9 +1386,9 @@ server <- shinyServer(function(input, output, session) {
         if(input$label2 != ""){
           main = paste("Transition Graph for",input$label2, sep=" ")
         }
-        else{main ="Transition Graph for Group 2 " }
-        print(plot(g, main = main, layout=layout_in_circle(g), vertex.label.color= "white",
-                    vertex.label.family = "Helvetica", edge.label.font = 2))
+        else{main ="Transition Graph for Group 2" }
+        print(plot(g, main = main, layout=layout_in_circle(g,order = c(sort(complicatedCalls),"D","F","H","A","Sh","U")), vertex.label.color= "black",
+                    vertex.label.family = "Helvetica", vertex.label.font = 1,vertex.label.cex=1.5))
         
         
         #text(summaryMLE())
@@ -1346,7 +1434,7 @@ server <- shinyServer(function(input, output, session) {
         fs = c(fs, "BorutaStats.csv")
       
         out<-capture.output(summaryMLE())
-        cat(out,file="LinearModel.txt",sep="\n",append=TRUE)
+        cat(out,file="LinearModel.txt",sep="\n",append=F)
       
         fs = c(fs, "LinearModel.txt")
         
